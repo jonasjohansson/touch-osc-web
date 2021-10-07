@@ -14,7 +14,8 @@
 	z-index: 10;
 	height: 100%;
 	width: 100%;
-	background-color: var(--dark-gray);
+	background-color: var(--color);
+	filter: brightness(0.1);
 }
 
 [class^='fader']:after {

@@ -1,13 +1,17 @@
 .labelv,
 .labelh {
-	/* display: none; */
+	display: none !important;
 	pointer-events: none;
 	border: 0;
 	color: var(--color);
+	color: white;
 	background-color: transparent;
 	justify-content: center;
 	align-items: center;
 	display: flex;
+	z-index: 1000;
+	filter: contrast(0.5);
+	mix-blend-mode: difference;
 }
 
 .labelv label,

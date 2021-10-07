@@ -1,6 +1,7 @@
 #grid {
 	z-index: -1;
 	display: grid;
+	visibility: hidden;
 }
 
 #grid div {

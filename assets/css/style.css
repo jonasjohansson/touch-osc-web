@@ -5,7 +5,7 @@
 @import url('label.css');
 
 :root {
-	--aside: 40px;
+	--aside: 60px;
 	--grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 	--grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 	--color: orange;
@@ -33,7 +33,7 @@ body {
 	background-color: #000;
 	color: white;
 	box-sizing: border-box;
-	font: 10px/1 sans-serif;
+	font: 14px/1 sans-serif;
 	overflow: hidden;
 }
 
@@ -89,14 +89,40 @@ main div {
 	border: 1px solid var(--color);
 	box-sizing: border-box;
 	background-color: transparent;
-	border-radius: 6px;
+	/* border-radius: 6px; */
 }
 
-main div > * {
+main div[data-id]:before {
+	content: attr(data-id) ' ' !important;
+}
+
+main div > *:first-child {
 	position: absolute;
 	width: 100%;
 	height: 100%;
 	background-color: var(--dark-gray);
+}
+
+main div > *:first-child ~ * {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	text-align: center;
+	color: white;
+	z-index: 999;
+	pointer-events: none;
+	align-items: center;
+	display: inherit;
+	text-transform: capitalize;
+}
+
+main div > label {
+	display: table-cell;
+	vertical-align: middle;
+	z-index: 100;
+	pointer-events: none;
 }
 
 /* aside */
@@ -109,7 +135,9 @@ aside {
 	box-sizing: border-box;
 	column-count: var(--count);
 	text-align: center;
+	text-transform: uppercase;
 	cursor: pointer;
+	z-index: 1000;
 }
 
 aside > * {

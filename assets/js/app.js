@@ -1,17 +1,18 @@
 const LAYOUT = {};
 LAYOUT.grid = 20;
+const fscale = 10000;
 
-var socket = new WebSocket('ws://localhost:5000');
+var socket = new WebSocket('ws://192.168.1.23:5000');
 
-socket.onopen = function () {
+window.onload = () => {
 	loadZipFile('assets/touch/rotarytest.touchosc');
 };
 
 function parseXml(xmlStr) {
-	console.log('parsing xml', xmlStr);
+	// console.log('parsing xml', xmlStr);
 	data = xml2js(xmlStr, { compact: true, spaces: 4 });
 	tidy(data);
-	console.log('parsed json', data);
+	// console.log('parsed json', data);
 	drawInterface(data);
 	window.onload = setSize();
 }
@@ -45,7 +46,6 @@ function loadZipFile(url) {
 		});
 }
 
-/* load XML */
 function loadFile(url, callback) {
 	var xhr = new XMLHttpRequest();
 	xhr.arguments = Array.prototype.slice.call(arguments, 2);
@@ -58,11 +58,6 @@ function loadFile(url, callback) {
 	xhr.open('GET', url, true);
 	xhr.send(null);
 }
-
-// let ws = new WebSocket('ws://192.168.10.234:9001');
-let ws = new WebSocket('wss://mio-server.glitch.me');
-
-/* draw interface */
 
 function tidy(data) {
 	data.layout.attr = data.layout._attributes;
@@ -80,7 +75,7 @@ function tidy(data) {
 		for (let control of page.control) {
 			control.attr = control._attributes;
 			control.attr.name = atob(control.attr.name);
-			let addr = control.attr.osc_cs;
+			console.log(control.attr);
 			control.attr.addr = control.attr['osc_cs']
 				? atob(control.attr.osc_cs)
 				: `/${page.attr.name}/${control.attr.name}`;
@@ -96,7 +91,6 @@ function tidy(data) {
 function drawInterface(data) {
 	const aside = document.createElement('aside');
 	const main = document.createElement('main');
-	const fscale = 10000;
 	document.body.appendChild(aside);
 	document.body.appendChild(main);
 	LAYOUT.w = data.layout.attr.w || 960;
@@ -134,80 +128,35 @@ function drawInterface(data) {
 			div.style.setProperty('--h', Math.ceil(control.attr.h / LAYOUT.grid));
 			div.style.setProperty('--color', `var(--${control.attr.color})`);
 			let el = null;
+			// div.textContent = control.attr.name;
 			switch (control.attr.type) {
 				case 'push':
-					el = document.createElement('input');
-					el.type = 'button';
-					el.onclick = () => {
-						send({
-							address: control.attr.addr,
-							args: new Array({
-								type: 'f',
-								value: 1.0,
-							}),
-						});
-					};
+					el = createPushButton(control);
 					break;
 				case 'toggle':
-					el = document.createElement('input');
-					el.type = 'checkbox';
-					el.onclick = () => {
-						send(getDataObject(control.attr.addr, 'f', el.value));
-					};
+					el = createToggleButton(control);
 					break;
 				case 'labelv':
 				case 'labelh':
-					div.textContent = atob(control.attr.text);
+					div.textContent = atob(control.attr.name);
 					break;
 				case 'rotaryh':
 				case 'rotaryv':
-					el = document.createElement('x-rotary');
-					el.min = !control.attr.inverted
-						? parseInt(control.attr.scalef) * fscale
-						: parseInt(control.attr.scalet) * fscale;
-					el.max = !control.attr.inverted
-						? parseInt(control.attr.scalet) * fscale
-						: parseInt(control.attr.scalef) * fscale;
-					if (control.attr.centered) {
-						el.value = Math.abs(el.min - el.max) / 2;
-					}
-					el.addEventListener('change', () => {
-						let val = el.value / fscale;
-						div.style.setProperty('--val', val);
-						send(getDataObject(control.attr.addr, 'f', val));
-					});
+					el = createRotary(control);
 					break;
 				case 'faderh':
 				case 'faderv':
-					el = document.createElement('input');
-					el.type = 'range';
-					el.min = !control.attr.inverted
-						? parseInt(control.attr.scalef) * fscale
-						: parseInt(control.attr.scalet) * fscale;
-					el.max = !control.attr.inverted
-						? parseInt(control.attr.scalet) * fscale
-						: parseInt(control.attr.scalef) * fscale;
-					if (control.attr.centered) {
-						el.value = Math.abs(el.min - el.max) / 2;
-					}
-					el.addEventListener('input', () => {
-						let val = el.value / fscale;
-						div.style.setProperty('--val', val);
-					});
-					el.addEventListener('change', () => {
-						let val = el.value / fscale;
-						send(getDataObject(control.attr.addr, 'f', val));
-					});
-					// if (control.attr.type === 'faderv') {
-					// 	const sy =
-					// 		(LAYOUT.rows / LAYOUT.cols) * (control.attr.w / control.attr.h);
-					// 	const sx =
-					// 		(LAYOUT.cols / LAYOUT.rows) * (control.attr.h / control.attr.w);
-					// 	el.style.transform = `rotate(-90deg) scale(${sx}, ${sy})`;
-					// }
+					el = createFader(control);
 					break;
 			}
-			if (el !== null) div.appendChild(el);
+			if (el !== null) {
+				div.appendChild(el);
+				let label = document.createElement('span');
+				label.textContent = control.attr.name;
+
+				div.style.setProperty('--val', el.value);
+				div.appendChild(label);
+			}
 			section.appendChild(div);
 		}
 	}
@@ -254,7 +203,65 @@ function setSize() {
 
 function $(type = 'div', className, id) {
 	const el = document.createElement(type);
-	el.className = className;
-	el.id = id;
+	if (type === 'div') {
+		el.className = className;
+		el.id = id;
+	}
+	// el.setAttribute('data-id', id);
 	return el;
 }
+
+const createPushButton = (control) => {
+	let el = document.createElement('input');
+	el.type = 'button';
+	let msg = getDataObject(control.attr.addr, 'f', 1.0);
+	el.onclick = send(msg);
+	return el;
+};
+
+const createToggleButton = (control) => {
+	let el = document.createElement('input');
+	el.type = 'checkbox';
+	el.value = el.checked ? 1 : 0;
+	let msg = getDataObject(control.attr.addr, 'f', el.value);
+	el.onclick = send(msg);
+	return el;
+};
+
+const createRotary = (control) => {
+	let el = document.createElement('x-rotary');
+	el.min = !control.attr.inverted ? parseInt(control.attr.scalef) * fscale : parseInt(control.attr.scalet) * fscale;
+	el.max = !control.attr.inverted ? parseInt(control.attr.scalet) * fscale : parseInt(control.attr.scalef) * fscale;
+	if (control.attr.centered) {
+		el.value = Math.abs(el.min - el.max) / 2;
+	}
+	el.onchange = () => {
+		let val = el.value / fscale;
+		el.parentNode.style.setProperty('--val', val);
+		let msg = getDataObject(control.attr.addr, 'f', val);
+		send(msg);
+	};
+	return el;
+};
+
+const createFader = (control) => {
+	let el = document.createElement('input');
+	el.type = 'range';
+	el.min = !control.attr.inverted ? parseInt(control.attr.scalef) * fscale : parseInt(control.attr.scalet) * fscale;
+	el.max = !control.attr.inverted ? parseInt(control.attr.scalet) * fscale : parseInt(control.attr.scalef) * fscale;
+	el.value = 0;
+	console.log(control.attr.centered);
+	if (control.attr.centered) {
+		el.value = 0.5;
+	}
+	el.addEventListener('input', (e) => {
+		let val = el.value / fscale;
+		el.parentNode.style.setProperty('--val', val);
+	});
+	el.addEventListener('change', (e) => {
+		let val = el.value / fscale;
+		let msg = getDataObject(control.attr.addr, 'f', val);
+		send(msg);
+	});
+	return el;
+};
