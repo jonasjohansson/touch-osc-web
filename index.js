@@ -8,6 +8,8 @@ const wss = new WebSocket.Server({
 	server: server,
 });
 
+console.log(`Starting server…`);
+
 app.use('/', express.static(__dirname + '/'));
 
 const udpPort = new osc.UDPPort({
