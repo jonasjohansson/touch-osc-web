@@ -128,6 +128,7 @@ function drawInterface(data) {
 			div.style.setProperty('--h', Math.ceil(control.attr.h / LAYOUT.grid));
 			div.style.setProperty('--color', `var(--${control.attr.color})`);
 			let el = null;
+
 			// div.textContent = control.attr.name;
 			switch (control.attr.type) {
 				case 'push':
@@ -153,8 +154,7 @@ function drawInterface(data) {
 				div.appendChild(el);
 				let label = document.createElement('span');
 				label.textContent = control.attr.name;
-
-				div.style.setProperty('--val', el.value);
+				if (control.attr.centered) div.style.setProperty('--val', 0.5);
 				div.appendChild(label);
 			}
 			section.appendChild(div);

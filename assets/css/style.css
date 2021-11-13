@@ -103,6 +103,11 @@ main div > *:first-child {
 	background-color: var(--dark-gray);
 }
 
+main div > input[type='button'][value='1'] {
+	background-color: var(--color);
+	text-indent: -9999px;
+}
+
 main div > *:first-child ~ * {
 	position: absolute;
 	top: 0;
